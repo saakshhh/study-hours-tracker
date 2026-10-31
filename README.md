@@ -73,7 +73,8 @@ These aren't part of the initial MVP, but they're features I can work on once th
 
 ## Project Documentation
 
-- [Eisenhower Matrix](docs/eisenhower-matrix.md)
+- [Eisenhower Matrix](Eisenhower%20Matrix.md)
+- [System Diagram](System%20Diagram.png)
 - [Editable System Diagram](docs/Study%20Hours%20Tracker.drawio)
 
 ## Author
