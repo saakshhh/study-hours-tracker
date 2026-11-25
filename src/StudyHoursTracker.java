@@ -1,9 +1,16 @@
+
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 public class StudyHoursTracker {
+
+    private static final Path DATA_FILE = Path.of("study_sessions.csv");
 
     private static class StudySession {
         String course;
@@ -19,10 +26,14 @@ public class StudyHoursTracker {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        ArrayList<StudySession> sessions = new ArrayList<>();
+        ArrayList<StudySession> sessions = loadSessions();
         boolean running = true;
 
         System.out.println("Welcome to Study Hours Tracker!");
+
+        if (!sessions.isEmpty()) {
+            System.out.println("Loaded " + sessions.size() + " saved study session(s).");
+        }
 
         while (running) {
             System.out.println("\n=== Main Menu ===");
@@ -72,6 +83,12 @@ public class StudyHoursTracker {
             return;
         }
 
+        // commas and quotes would need extra handling when reading the CSV
+        if (course.contains(",") || course.contains("\"")) {
+            System.out.println("Course name cannot contain commas or quotation marks.");
+            return;
+        }
+
         System.out.print("Date (YYYY-MM-DD): ");
         String dateInput = scanner.nextLine().trim();
 
@@ -107,11 +124,85 @@ public class StudyHoursTracker {
         }
 
         StudySession session = new StudySession(course, date, minutes);
+
+        // don't keep a session in memory if saving it to the file failed
+        if (!saveSession(session)) {
+            return;
+        }
+
         sessions.add(session);
 
         System.out.println("\nStudy session recorded!");
         System.out.println("Course: " + course);
         System.out.println("Date: " + date);
         System.out.println("Duration: " + minutes + " minutes");
+    }
+
+    private static boolean saveSession(StudySession session) {
+        try {
+            boolean needsHeader = !Files.exists(DATA_FILE)
+                    || Files.size(DATA_FILE) == 0;
+
+            String row = session.course + ","
+                    + session.date + ","
+                    + session.minutes + "\n";
+
+            if (needsHeader) {
+                row = "course,date,minutes\n" + row;
+            }
+
+            Files.writeString(DATA_FILE, row,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.APPEND);
+
+            return true;
+
+        } catch (IOException e) {
+            System.out.println("Could not save study session: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static ArrayList<StudySession> loadSessions() {
+        ArrayList<StudySession> sessions = new ArrayList<>();
+
+        if (!Files.exists(DATA_FILE)) {
+            return sessions;
+        }
+
+        try {
+            for (String line : Files.readAllLines(DATA_FILE)) {
+                if (line.isBlank() || line.equals("course,date,minutes")) {
+                    continue;
+                }
+
+                String[] parts = line.split(",", -1);
+
+                if (parts.length != 3) {
+                    System.out.println("Skipping an invalid CSV row.");
+                    continue;
+                }
+
+                try {
+                    String course = parts[0].trim();
+                    LocalDate date = LocalDate.parse(parts[1].trim());
+                    int minutes = Integer.parseInt(parts[2].trim());
+
+                    if (!course.isEmpty() && minutes > 0) {
+                        sessions.add(new StudySession(course, date, minutes));
+                    } else {
+                        System.out.println("Skipping a session with invalid data.");
+                    }
+
+                } catch (DateTimeParseException | NumberFormatException e) {
+                    System.out.println("Skipping a session with invalid data.");
+                }
+            }
+
+        } catch (IOException e) {
+            System.out.println("Could not load saved sessions: " + e.getMessage());
+        }
+
+        return sessions;
     }
 }
