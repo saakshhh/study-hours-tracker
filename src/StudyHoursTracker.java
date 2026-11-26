@@ -1,6 +1,7 @@
 
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.io.IOException;
@@ -54,7 +55,7 @@ public class StudyHoursTracker {
                     break;
 
                 case "2":
-                    System.out.println("Weekly summary is coming soon.");
+                    showWeeklyMinutes(sessions);
                     break;
 
                 case "3":
@@ -204,5 +205,50 @@ public class StudyHoursTracker {
         }
 
         return sessions;
+    }
+
+    private static HashMap<String, Integer> calculateWeeklyMinutes(
+            ArrayList<StudySession> sessions) {
+
+        HashMap<String, Integer> minutesByCourse = new HashMap<>();
+
+        LocalDate today = LocalDate.now();
+
+        // use Monday as the start so each weekly summary covers the same seven days
+        LocalDate startOfWeek = today.minusDays(today.getDayOfWeek().getValue() - 1);
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
+
+        for (StudySession session : sessions) {
+            if (session.date.isBefore(startOfWeek)
+                    || session.date.isAfter(endOfWeek)) {
+                continue;
+            }
+
+            int previousMinutes = minutesByCourse.getOrDefault(session.course, 0);
+            minutesByCourse.put(session.course, previousMinutes + session.minutes);
+        }
+
+        return minutesByCourse;
+    }
+
+    private static void showWeeklyMinutes(ArrayList<StudySession> sessions) {
+        HashMap<String, Integer> weeklyMinutes = calculateWeeklyMinutes(sessions);
+
+        System.out.println("\n=== Weekly Study Time ===");
+
+        if (weeklyMinutes.isEmpty()) {
+            System.out.println("No study sessions recorded this week.");
+            return;
+        }
+
+        int totalMinutes = 0;
+
+        for (String course : weeklyMinutes.keySet()) {
+            int minutes = weeklyMinutes.get(course);
+            System.out.println(course + ": " + minutes + " minutes");
+            totalMinutes += minutes;
+        }
+
+        System.out.println("Total study time: " + totalMinutes + " minutes");
     }
 }
