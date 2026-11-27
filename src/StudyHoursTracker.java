@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Collections;
 
 public class StudyHoursTracker {
 
@@ -260,9 +261,12 @@ public class StudyHoursTracker {
             return;
         }
 
+        ArrayList<String> courses = new ArrayList<>(weeklyMinutes.keySet());
+        Collections.sort(courses, String.CASE_INSENSITIVE_ORDER);
+
         int totalMinutes = 0;
 
-        for (String course : weeklyMinutes.keySet()) {
+        for (String course : courses) {
             int minutes = weeklyMinutes.get(course);
             System.out.println(course + ": " + formatStudyTime(minutes));
             totalMinutes += minutes;
