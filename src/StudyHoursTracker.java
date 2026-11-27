@@ -234,6 +234,17 @@ public class StudyHoursTracker {
         return minutesByCourse;
     }
 
+    private static String formatStudyTime(int totalMinutes) {
+        int hours = totalMinutes / 60;
+        int minutes = totalMinutes % 60;
+
+        if (hours == 0) {
+            return minutes + " min";
+        }
+
+        return hours + " hr " + minutes + " min";
+    }
+
     private static void showWeeklyMinutes(ArrayList<StudySession> sessions) {
         HashMap<String, Integer> weeklyMinutes = calculateWeeklyMinutes(sessions);
 
@@ -253,10 +264,10 @@ public class StudyHoursTracker {
 
         for (String course : weeklyMinutes.keySet()) {
             int minutes = weeklyMinutes.get(course);
-            System.out.println(course + ": " + minutes + " minutes");
+            System.out.println(course + ": " + formatStudyTime(minutes));
             totalMinutes += minutes;
         }
 
-        System.out.println("Total study time: " + totalMinutes + " minutes");
+        System.out.println("Total study time: " + formatStudyTime(totalMinutes));
     }
 }
