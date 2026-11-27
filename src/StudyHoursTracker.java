@@ -1,4 +1,3 @@
-
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -249,29 +248,33 @@ public class StudyHoursTracker {
     private static void showWeeklyMinutes(ArrayList<StudySession> sessions) {
         HashMap<String, Integer> weeklyMinutes = calculateWeeklyMinutes(sessions);
 
-        System.out.println("\n=== Weekly Study Time ===");
-
         LocalDate startOfWeek = getStartOfWeek();
         LocalDate endOfWeek = startOfWeek.plusDays(6);
 
+        System.out.println("\n=== Weekly Study Summary ===");
         System.out.println("Week: " + startOfWeek + " to " + endOfWeek);
 
         if (weeklyMinutes.isEmpty()) {
-            System.out.println("No study sessions recorded this week.");
+            System.out.println("\nNo study sessions recorded this week.");
             return;
         }
 
         ArrayList<String> courses = new ArrayList<>(weeklyMinutes.keySet());
         Collections.sort(courses, String.CASE_INSENSITIVE_ORDER);
 
+        System.out.println("\nStudy Time by Course");
+        System.out.println("--------------------------------");
+
         int totalMinutes = 0;
 
         for (String course : courses) {
             int minutes = weeklyMinutes.get(course);
-            System.out.println(course + ": " + formatStudyTime(minutes));
             totalMinutes += minutes;
+
+            System.out.printf("%-20s %s%n", course, formatStudyTime(minutes));
         }
 
-        System.out.println("Total study time: " + formatStudyTime(totalMinutes));
+        System.out.println("--------------------------------");
+        System.out.printf("%-20s %s%n", "Total", formatStudyTime(totalMinutes));
     }
 }
