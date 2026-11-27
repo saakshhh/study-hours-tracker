@@ -207,15 +207,18 @@ public class StudyHoursTracker {
         return sessions;
     }
 
-    private static HashMap<String, Integer> calculateWeeklyMinutes(
-            ArrayList<StudySession> sessions) {
+    private static LocalDate getStartOfWeek() {
+        LocalDate today = LocalDate.now();
+
+        // use Monday as the starting point for all weekly calculations
+        return today.minusDays(today.getDayOfWeek().getValue() - 1);
+    }
+
+    private static HashMap<String, Integer> calculateWeeklyMinutes(ArrayList<StudySession> sessions) {
 
         HashMap<String, Integer> minutesByCourse = new HashMap<>();
 
-        LocalDate today = LocalDate.now();
-
-        // use Monday as the start so each weekly summary covers the same seven days
-        LocalDate startOfWeek = today.minusDays(today.getDayOfWeek().getValue() - 1);
+        LocalDate startOfWeek = getStartOfWeek();
         LocalDate endOfWeek = startOfWeek.plusDays(6);
 
         for (StudySession session : sessions) {
@@ -235,6 +238,11 @@ public class StudyHoursTracker {
         HashMap<String, Integer> weeklyMinutes = calculateWeeklyMinutes(sessions);
 
         System.out.println("\n=== Weekly Study Time ===");
+
+        LocalDate startOfWeek = getStartOfWeek();
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
+
+        System.out.println("Week: " + startOfWeek + " to " + endOfWeek);
 
         if (weeklyMinutes.isEmpty()) {
             System.out.println("No study sessions recorded this week.");
