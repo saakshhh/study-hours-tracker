@@ -55,7 +55,7 @@ public class StudyHoursTracker {
                     break;
 
                 case "2":
-                    showWeeklyMinutes(sessions);
+                    showWeeklySummary(sessions);
                     break;
 
                 case "3":
@@ -71,8 +71,7 @@ public class StudyHoursTracker {
         scanner.close();
     }
 
-    private static void recordStudySession(Scanner scanner,
-                                           ArrayList<StudySession> sessions) {
+    private static void recordStudySession(Scanner scanner, ArrayList<StudySession> sessions) {
 
         System.out.println("\n=== Record Study Session ===");
 
@@ -84,7 +83,7 @@ public class StudyHoursTracker {
             return;
         }
 
-        // commas and quotes would need extra handling when reading the CSV
+        // keeping course names simple so the CSV is easier to read later
         if (course.contains(",") || course.contains("\"")) {
             System.out.println("Course name cannot contain commas or quotation marks.");
             return;
@@ -102,6 +101,7 @@ public class StudyHoursTracker {
             return;
         }
 
+        // users should only be able to log study time that has already happened
         if (date.isAfter(LocalDate.now())) {
             System.out.println("Study date cannot be in the future.");
             return;
@@ -126,7 +126,7 @@ public class StudyHoursTracker {
 
         StudySession session = new StudySession(course, date, minutes);
 
-        // don't keep a session in memory if saving it to the file failed
+        // only add the session to the list if it was actually saved
         if (!saveSession(session)) {
             return;
         }
@@ -141,8 +141,7 @@ public class StudyHoursTracker {
 
     private static boolean saveSession(StudySession session) {
         try {
-            boolean needsHeader = !Files.exists(DATA_FILE)
-                    || Files.size(DATA_FILE) == 0;
+            boolean needsHeader = !Files.exists(DATA_FILE) || Files.size(DATA_FILE) == 0;
 
             String row = session.course + ","
                     + session.date + ","
@@ -152,6 +151,7 @@ public class StudyHoursTracker {
                 row = "course,date,minutes\n" + row;
             }
 
+            // append instead of overwriting so older study sessions aren't lost
             Files.writeString(DATA_FILE, row,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.APPEND);
@@ -167,6 +167,7 @@ public class StudyHoursTracker {
     private static ArrayList<StudySession> loadSessions() {
         ArrayList<StudySession> sessions = new ArrayList<>();
 
+        // the file won't exist when someone runs the tracker for the first time
         if (!Files.exists(DATA_FILE)) {
             return sessions;
         }
@@ -177,6 +178,7 @@ public class StudyHoursTracker {
                     continue;
                 }
 
+                // keep empty fields so incomplete rows can be caught
                 String[] parts = line.split(",", -1);
 
                 if (parts.length != 3) {
@@ -210,11 +212,12 @@ public class StudyHoursTracker {
     private static LocalDate getStartOfWeek() {
         LocalDate today = LocalDate.now();
 
-        // use Monday as the starting point for all weekly calculations
+        // use Monday as the start so weekly totals stay consistent
         return today.minusDays(today.getDayOfWeek().getValue() - 1);
     }
 
-    private static HashMap<String, Integer> calculateWeeklyMinutes(ArrayList<StudySession> sessions) {
+    private static HashMap<String, Integer> calculateWeeklyMinutes(
+            ArrayList<StudySession> sessions) {
 
         HashMap<String, Integer> minutesByCourse = new HashMap<>();
 
@@ -222,11 +225,11 @@ public class StudyHoursTracker {
         LocalDate endOfWeek = startOfWeek.plusDays(6);
 
         for (StudySession session : sessions) {
-            if (session.date.isBefore(startOfWeek)
-                    || session.date.isAfter(endOfWeek)) {
+            if (session.date.isBefore(startOfWeek) || session.date.isAfter(endOfWeek)) {
                 continue;
             }
 
+            // a course might have multiple sessions, so add to its previous total
             int previousMinutes = minutesByCourse.getOrDefault(session.course, 0);
             minutesByCourse.put(session.course, previousMinutes + session.minutes);
         }
@@ -245,7 +248,7 @@ public class StudyHoursTracker {
         return hours + " hr " + minutes + " min";
     }
 
-    private static void showWeeklyMinutes(ArrayList<StudySession> sessions) {
+    private static void showWeeklySummary(ArrayList<StudySession> sessions) {
         HashMap<String, Integer> weeklyMinutes = calculateWeeklyMinutes(sessions);
 
         LocalDate startOfWeek = getStartOfWeek();
@@ -259,6 +262,7 @@ public class StudyHoursTracker {
             return;
         }
 
+        // HashMap doesn't keep courses in order, so sort them before displaying
         ArrayList<String> courses = new ArrayList<>(weeklyMinutes.keySet());
         Collections.sort(courses, String.CASE_INSENSITIVE_ORDER);
 
